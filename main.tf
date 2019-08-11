@@ -139,6 +139,8 @@ data "aws_iam_policy_document" "allow_change_password" {
 }
 
 data "aws_iam_policy_document" "allow_key_management" {
+  count = local.enabled ? 1 : 0
+
   statement {
     actions = [
       "iam:DeleteAccessKey",
@@ -185,9 +187,11 @@ resource "aws_iam_policy" "allow_change_password_admin" {
 }
 
 resource "aws_iam_policy" "allow_key_management_admin" {
+  count       = local.enabled ? 1 : 0
+
   name        = "${module.admin_label.id}-allow-key-management"
   description = "Allow admin users to manage their own access keys"
-  policy      = data.aws_iam_policy_document.allow_key_management.json
+  policy      = data.aws_iam_policy_document.allow_key_management.*.json
 }
 
 data "aws_iam_policy_document" "assume_role_admin" {
@@ -236,8 +240,9 @@ resource "aws_iam_group_policy_attachment" "allow_chage_password_admin" {
 }
 
 resource "aws_iam_group_policy_attachment" "key_management_admin" {
+  count      = local.enabled ? 1 : 0
   group      = aws_iam_group.admin[0].name
-  policy_arn = aws_iam_policy.allow_key_management_admin.arn
+  policy_arn = aws_iam_policy.allow_key_management_admin.*.arn
 }
 
 resource "aws_iam_role_policy_attachment" "admin" {
@@ -273,12 +278,15 @@ resource "aws_iam_policy" "allow_change_password_readonly" {
 }
 
 resource "aws_iam_policy" "allow_key_management_readonly" {
+  count       = local.enabled ? 1 : 0
   name        = "${module.readonly_label.id}-permit-manage-keys"
   description = "Allow readonly users to manage their own access keys"
-  policy      = data.aws_iam_policy_document.allow_key_management.json
+  policy      = data.aws_iam_policy_document.allow_key_management.*.json
 }
 
 data "aws_iam_policy_document" "assume_role_readonly" {
+  count = local.enabled ? 1 : 0
+
   statement {
     actions   = ["sts:AssumeRole"]
     resources = [join("", aws_iam_role.readonly.*.arn)]
@@ -322,8 +330,9 @@ resource "aws_iam_group_policy_attachment" "allow_change_password_readonly" {
 }
 
 resource "aws_iam_group_policy_attachment" "key_management_readonly" {
+  count      = local.enabled ? 1 : 0
   group      = aws_iam_group.readonly[0].name
-  policy_arn = aws_iam_policy.allow_key_management_readonly.arn
+  policy_arn = aws_iam_policy.allow_key_management_readonly.*.arn
 }
 
 resource "aws_iam_role_policy_attachment" "readonly" {
