@@ -173,17 +173,14 @@ resource "aws_iam_policy" "manage_mfa_admin" {
   count       = local.enabled ? 1 : 0
   name        = "${module.admin_label.id}-permit-mfa"
   description = "Allow admin users to manage Virtual MFA Devices"
-  policy      = join("", data.aws_iam_policy_document.manage_mfa.*.json)
+  policy      = data.aws_iam_policy_document.manage_mfa[0].json
 }
 
 resource "aws_iam_policy" "allow_change_password_admin" {
   count       = local.enabled ? 1 : 0
   name        = "${module.admin_label.id}-permit-change-password"
   description = "Allow admin users to change password"
-  policy = join(
-    "",
-    data.aws_iam_policy_document.allow_change_password.*.json,
-  )
+  policy      = data.aws_iam_policy_document.allow_change_password[0].json
 }
 
 resource "aws_iam_policy" "allow_key_management_admin" {
@@ -191,7 +188,7 @@ resource "aws_iam_policy" "allow_key_management_admin" {
 
   name        = "${module.admin_label.id}-allow-key-management"
   description = "Allow admin users to manage their own access keys"
-  policy      = data.aws_iam_policy_document.allow_key_management.*.json
+  policy      = data.aws_iam_policy_document.allow_key_management[0].json
 }
 
 data "aws_iam_policy_document" "assume_role_admin" {
@@ -199,7 +196,7 @@ data "aws_iam_policy_document" "assume_role_admin" {
 
   statement {
     actions   = ["sts:AssumeRole"]
-    resources = [join("", aws_iam_role.admin.*.arn)]
+    resources = [aws_iam_role.admin[0].arn]
   }
 }
 
@@ -207,7 +204,7 @@ resource "aws_iam_policy" "assume_role_admin" {
   count       = local.enabled ? 1 : 0
   name        = "${module.admin_label.id}-permit-assume-role"
   description = "Allow assuming admin role"
-  policy      = join("", data.aws_iam_policy_document.assume_role_admin.*.json)
+  policy      = data.aws_iam_policy_document.assume_role_admin[0].json
 }
 
 resource "aws_iam_group" "admin" {
@@ -218,43 +215,43 @@ resource "aws_iam_group" "admin" {
 resource "aws_iam_role" "admin" {
   count              = local.enabled ? 1 : 0
   name               = module.admin_label.id
-  assume_role_policy = join("", data.aws_iam_policy_document.role_trust.*.json)
+  assume_role_policy = data.aws_iam_policy_document.role_trust[0].json
 }
 
 resource "aws_iam_group_policy_attachment" "assume_role_admin" {
   count      = local.enabled ? 1 : 0
-  group      = join("", aws_iam_group.admin.*.name)
-  policy_arn = join("", aws_iam_policy.assume_role_admin.*.arn)
+  group      = aws_iam_group.admin[0].name
+  policy_arn = aws_iam_policy.assume_role_admin[0].arn
 }
 
 resource "aws_iam_group_policy_attachment" "manage_mfa_admin" {
   count      = local.enabled ? 1 : 0
-  group      = join("", aws_iam_group.admin.*.name)
-  policy_arn = join("", aws_iam_policy.manage_mfa_admin.*.arn)
+  group      = aws_iam_group.admin[0].name
+  policy_arn = aws_iam_policy.manage_mfa_admin[0].arn
 }
 
 resource "aws_iam_group_policy_attachment" "allow_chage_password_admin" {
   count      = local.enabled ? 1 : 0
-  group      = join("", aws_iam_group.admin.*.name)
-  policy_arn = join("", aws_iam_policy.allow_change_password_admin.*.arn)
+  group      = aws_iam_group.admin[0].name
+  policy_arn = aws_iam_policy.allow_change_password_admin[0].arn
 }
 
 resource "aws_iam_group_policy_attachment" "key_management_admin" {
   count      = local.enabled ? 1 : 0
   group      = aws_iam_group.admin[0].name
-  policy_arn = aws_iam_policy.allow_key_management_admin.*.arn
+  policy_arn = aws_iam_policy.allow_key_management_admin[0].arn
 }
 
 resource "aws_iam_role_policy_attachment" "admin" {
   count      = local.enabled ? 1 : 0
-  role       = join("", aws_iam_role.admin.*.name)
+  role       = aws_iam_role.admin[0].name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
 resource "aws_iam_group_membership" "admin" {
   count = local.enabled && local.admin_user_names ? 1 : 0
   name  = module.admin_label.id
-  group = join("", aws_iam_group.admin.*.id)
+  group = aws_iam_group.admin[0].id
   users = var.admin_user_names
 }
 
@@ -264,24 +261,21 @@ resource "aws_iam_policy" "manage_mfa_readonly" {
   count       = local.enabled ? 1 : 0
   name        = "${module.readonly_label.id}-permit-mfa"
   description = "Allow readonly users to manage Virtual MFA Devices"
-  policy      = join("", data.aws_iam_policy_document.manage_mfa.*.json)
+  policy      = data.aws_iam_policy_document.manage_mfa[0].json
 }
 
 resource "aws_iam_policy" "allow_change_password_readonly" {
   count       = local.enabled ? 1 : 0
   name        = "${module.readonly_label.id}-permit-change-password"
   description = "Allow readonly users to change password"
-  policy = join(
-    "",
-    data.aws_iam_policy_document.allow_change_password.*.json,
-  )
+  policy      = data.aws_iam_policy_document.allow_change_password[0].json
 }
 
 resource "aws_iam_policy" "allow_key_management_readonly" {
   count       = local.enabled ? 1 : 0
   name        = "${module.readonly_label.id}-permit-manage-keys"
   description = "Allow readonly users to manage their own access keys"
-  policy      = data.aws_iam_policy_document.allow_key_management.*.json
+  policy      = data.aws_iam_policy_document.allow_key_management[0].json
 }
 
 data "aws_iam_policy_document" "assume_role_readonly" {
@@ -289,7 +283,7 @@ data "aws_iam_policy_document" "assume_role_readonly" {
 
   statement {
     actions   = ["sts:AssumeRole"]
-    resources = [join("", aws_iam_role.readonly.*.arn)]
+    resources = [aws_iam_role.readonly[0].arn]
   }
 }
 
@@ -297,7 +291,7 @@ resource "aws_iam_policy" "assume_role_readonly" {
   count       = local.enabled ? 1 : 0
   name        = "${module.readonly_label.id}-permit-assume-role"
   description = "Allow assuming readonly role"
-  policy      = join("", data.aws_iam_policy_document.assume_role_readonly.*.json)
+  policy      = data.aws_iam_policy_document.assume_role_readonly[0].json
 }
 
 resource "aws_iam_group" "readonly" {
@@ -308,48 +302,48 @@ resource "aws_iam_group" "readonly" {
 resource "aws_iam_role" "readonly" {
   count              = local.enabled ? 1 : 0
   name               = module.readonly_label.id
-  assume_role_policy = join("", data.aws_iam_policy_document.role_trust.*.json)
+  assume_role_policy = data.aws_iam_policy_document.role_trust[0].json
 }
 
 resource "aws_iam_group_policy_attachment" "assume_role_readonly" {
   count      = local.enabled ? 1 : 0
-  group      = join("", aws_iam_group.readonly.*.name)
-  policy_arn = join("", aws_iam_policy.assume_role_readonly.*.arn)
+  group      = aws_iam_group.readonly[0].name
+  policy_arn = aws_iam_policy.assume_role_readonly[0].arn
 }
 
 resource "aws_iam_group_policy_attachment" "manage_mfa_readonly" {
   count      = local.enabled ? 1 : 0
-  group      = join("", aws_iam_group.readonly.*.name)
-  policy_arn = join("", aws_iam_policy.manage_mfa_readonly.*.arn)
+  group      = aws_iam_group.readonly[0].name
+  policy_arn = aws_iam_policy.manage_mfa_readonly[0].arn
 }
 
 resource "aws_iam_group_policy_attachment" "allow_change_password_readonly" {
   count      = local.enabled ? 1 : 0
-  group      = join("", aws_iam_group.readonly.*.name)
-  policy_arn = join("", aws_iam_policy.allow_change_password_readonly.*.arn)
+  group      = aws_iam_group.readonly[0].name
+  policy_arn = aws_iam_policy.allow_change_password_readonly[0].arn
 }
 
 resource "aws_iam_group_policy_attachment" "key_management_readonly" {
   count      = local.enabled ? 1 : 0
   group      = aws_iam_group.readonly[0].name
-  policy_arn = aws_iam_policy.allow_key_management_readonly.*.arn
+  policy_arn = aws_iam_policy.allow_key_management_readonly[0].arn
 }
 
 resource "aws_iam_role_policy_attachment" "readonly" {
   count      = local.enabled ? 1 : 0
-  role       = join("", aws_iam_role.readonly.*.name)
+  role       = aws_iam_role.readonly[0].name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
 resource "aws_iam_group_membership" "readonly" {
   count = local.enabled && local.readonly_user_names ? 1 : 0
   name  = module.readonly_label.id
-  group = join("", aws_iam_group.readonly.*.id)
+  group = aws_iam_group.readonly[0].id
   users = var.readonly_user_names
 }
 
 locals {
-  role_readonly_name = join("", aws_iam_role.readonly.*.name)
-  role_admin_name    = join("", aws_iam_role.admin.*.name)
+  role_readonly_name = aws_iam_role.readonly[0].name
+  role_admin_name    = aws_iam_role.admin[0].name
 }
 
