@@ -21,7 +21,7 @@ module "readonly_label" {
 data "aws_caller_identity" "current" {
 }
 
-data "aws_iam_policy_document" "role_trust" {
+data "aws_iam_policy_document" "role_trust_admin" {
   count = local.enabled ? 1 : 0
 
   statement {
@@ -29,7 +29,26 @@ data "aws_iam_policy_document" "role_trust" {
 
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+      identifiers = [for admin_usr in var.admin_user_names: "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${admin_usr}"]
+    }
+
+    condition {
+      test     = "Bool"
+      variable = "aws:MultiFactorAuthPresent"
+      values   = ["true"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "role_trust_readonly" {
+  count = local.enabled ? 1 : 0
+
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [for readonly_usr in var.readonly_user_names: "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${readonly_usr}"]
     }
 
     condition {
@@ -215,7 +234,7 @@ resource "aws_iam_group" "admin" {
 resource "aws_iam_role" "admin" {
   count              = local.enabled ? 1 : 0
   name               = module.admin_label.id
-  assume_role_policy = data.aws_iam_policy_document.role_trust[0].json
+  assume_role_policy = data.aws_iam_policy_document.role_trust_admin[0].json
 }
 
 resource "aws_iam_group_policy_attachment" "assume_role_admin" {
@@ -302,7 +321,7 @@ resource "aws_iam_group" "readonly" {
 resource "aws_iam_role" "readonly" {
   count              = local.enabled ? 1 : 0
   name               = module.readonly_label.id
-  assume_role_policy = data.aws_iam_policy_document.role_trust[0].json
+  assume_role_policy = data.aws_iam_policy_document.role_trust_readonly[0].json
 }
 
 resource "aws_iam_group_policy_attachment" "assume_role_readonly" {
